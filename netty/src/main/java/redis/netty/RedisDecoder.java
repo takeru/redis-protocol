@@ -21,11 +21,6 @@ public class RedisDecoder extends ReplayingDecoder<VoidEnum> {
   public static final char LF = '\n';
   private static final char ZERO = '0';
 
-  // We track the current multibulk reply in the case
-  // where we do not get a complete reply in a single
-  // decode invocation.
-  private MultiBulkReply reply;
-
   public ChannelBuffer readBytes(ChannelBuffer is) throws IOException {
     int size = readInteger(is);
     if (size == -1) {
@@ -86,7 +81,7 @@ public class RedisDecoder extends ReplayingDecoder<VoidEnum> {
         return new BulkReply(readBytes(is));
       }
       case MultiBulkReply.MARKER: {
-        return decodeMultiBulkReply(is);
+        return new MultiBulkReply(this, is);
       }
       default: {
         throw new IOException("Unexpected character in stream: " + code);
@@ -95,24 +90,7 @@ public class RedisDecoder extends ReplayingDecoder<VoidEnum> {
   }
 
   @Override
-  public void checkpoint() {
-    super.checkpoint();
-  }
-
-  @Override
   protected Object decode(ChannelHandlerContext channelHandlerContext, Channel channel, ChannelBuffer channelBuffer, VoidEnum anEnum) throws Exception {
     return receive(channelBuffer);
-  }
-
-  public MultiBulkReply decodeMultiBulkReply(ChannelBuffer is) throws IOException {
-    try {
-      if (reply == null) {
-        reply = new MultiBulkReply(this, is);
-      }
-      reply.read(this, is);
-      return reply;
-    } finally {
-      reply = null;
-    }
   }
 }

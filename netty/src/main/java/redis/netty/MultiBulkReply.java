@@ -44,7 +44,6 @@ public class MultiBulkReply implements Reply<Reply[]> {
     for (int i = index; i < size; i++) {
       replies[i] = rd.receive(is);
       index = i + 1;
-      rd.checkpoint();
     }
   }
 
